@@ -32,16 +32,13 @@ func SetAttr(n *html.Node, attrKey string, attrValue string) {
 }
 
 func RemoveAttr(n *html.Node, attrKey string) {
-	for i := 0; i < len(n.Attr); i++ {
-		attr := n.Attr[i]
-		if attr.Key == attrKey {
-			newAttrs := make([]html.Attribute, len(n.Attr)-1)
-			copy(newAttrs, n.Attr[:i])
-			copy(newAttrs[i:], n.Attr[i+1:])
-			n.Attr = newAttrs
-			i--
+	filteredAttrs := make([]html.Attribute, 0, len(n.Attr))
+	for _, attr := range n.Attr {
+		if attr.Key != attrKey {
+			filteredAttrs = append(filteredAttrs, attr)
 		}
 	}
+	n.Attr = filteredAttrs
 }
 
 // TextContent returns the text within the given node
