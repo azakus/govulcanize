@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"code.google.com/p/go.net/html"
+
 	"github.com/tbuckley/vulcanize/htmlutils"
 	"github.com/tbuckley/vulcanize/importer"
 	"github.com/tbuckley/vulcanize/inliner"
@@ -33,6 +35,7 @@ func main() {
 		handleError(err)
 	}
 	UseNamedPolymerInvocations(doc, options.Verbose)
+	RemoveNoScript(doc, options.Verbose)
 	if options.CSP {
 		SeparateScripts(doc, options.CSPFile, options.Verbose)
 	}
@@ -111,7 +114,7 @@ func SeparateScripts(doc *htmlutils.Fragment, filename string, verbose bool) {
 
 	scriptContent := strings.Join(scripts, ";\n")
 	// @TODO compress if --strip is set
-	ioutil.WriteFile(filename, []byte(scriptContent), 0775)
+	ioutil.WriteFile(filename, []byte(scriptContent), 0644)
 
 	// insert out-of-lined script into document
 	basename := filepath.Base(filename)
@@ -168,8 +171,27 @@ func RemoveCommentsAndWhitespace(doc *htmlutils.Fragment) {
 	}
 }
 
+func RemoveNoScript(doc *htmlutils.Fragment, verbose bool) {
+	preds := htmlutils.AndP(
+		htmlutils.HasTagnameP("polymer-element"),
+		htmlutils.HasAttrP("noscript"),
+	)
+
+	scriptless := doc.Search(preds)
+	for _, e := range scriptless {
+		name, _ := htmlutils.Attr(e, "name")
+		invocation := "Polymer('" + name + "');"
+		if verbose {
+			fmt.Println("Injecting explicit Polymer invocation for noscript element", name)
+		}
+		script := htmlutils.CreateScript(invocation)
+		htmlutils.RemoveAttr(e, "noscript")
+		e.AppendChild(script)
+	}
+}
+
 func WriteFile(doc *htmlutils.Fragment, filename string) {
 	content := doc.String()
 	content = "<!doctype html>" + content
-	ioutil.WriteFile(filename, []byte(content), 0775)
+	ioutil.WriteFile(filename, []byte(content), 0644)
 }
