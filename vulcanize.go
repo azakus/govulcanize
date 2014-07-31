@@ -165,7 +165,19 @@ func RemoveCommentsAndWhitespace(doc *htmlutils.Fragment) {
 	isCommentNode := func(n *html.Node) bool {
 		return n.Type == html.CommentNode
 	}
-	comments := doc.Search(isCommentNode)
+	isEmptyTextNode := func(n *html.Node) bool {
+		var ret bool
+		if n.Type == html.TextNode {
+			stripped := strings.TrimSpace(n.Data)
+			ret = len(stripped) == 0
+		}
+		return ret
+	}
+	preds := htmlutils.OrP(
+		isEmptyTextNode,
+		isCommentNode,
+	)
+	comments := doc.Search(preds)
 	for _, comment := range comments {
 		htmlutils.RemoveNode(doc, comment)
 	}
