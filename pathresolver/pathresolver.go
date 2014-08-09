@@ -52,7 +52,9 @@ func resolveCSSPaths(input *htmlutils.Fragment, inputPath string, outputPath str
 // nodes that may be missing it
 func addAssetpathAttribute(input *htmlutils.Fragment, inputPath string, outputPath string) {
 	assetPath, _ := filepath.Rel(outputPath, inputPath)
-	if assetPath != "" {
+	if assetPath == "." {
+		assetPath = ""
+	} else {
 		assetPath += "/"
 	}
 	matches := input.Search(htmlutils.IsPolymerElementMissingAssetpath)
